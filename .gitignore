@@ -1,0 +1,55 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# macOS & Linux system files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# VS Code / PyCharm / other IDEs
+.vscode/
+.idea/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Compiled Pygame assets or cached images (if any)
+*.bmp
+*.jpg
+*.png
+*.ogg
+*.wav
+
+# Local configs and settings
+config/local_config.py
+.env
+
+# PyInstaller or build output
+dist/
+build/
+*.spec
+
+# Cache
+.cache/
+*.pyc
+
+# Test / debug artifacts
+coverage/
+htmlcov/
+*.cover
+*.py,cover
+
+# Notebooks and checkpoints
+*.ipynb
+.ipynb_checkpoints/
