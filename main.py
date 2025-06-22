@@ -11,9 +11,12 @@ clock = pygame.time.Clock()
 gui = GUI()
 world = World()
 
+is_panning = False
+last_mouse_pos = (0, 0)
+
 while True:
     dt = clock.tick(FPS)
-    screen.fill((0, 0, 0))
+    screen.fill(BACKGROUND_COLOR)
 
     world.update(dt)
     
@@ -22,8 +25,29 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit(); sys.exit()
 
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            world.place_machine_at(*pygame.mouse.get_pos(), offset_y=gui.last_height)
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                world.place_machine_at(*pygame.mouse.get_pos(), offset_y=gui.last_height)
+            elif event.button == 2:
+                is_panning = True
+                last_mouse_pos = pygame.mouse.get_pos()
+            elif event.button == 4 or event.button == 5:
+                delta = 1 if event.button == 4 else -1
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                world.adjust_zoom(delta, mouse_x, mouse_y, offset_y=gui.last_height)
+
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 2:
+                is_panning = False
+        
+        elif event.type == pygame.MOUSEMOTION and is_panning:
+            mx, my = pygame.mouse.get_pos()
+            dx = last_mouse_pos[0] - mx
+            dy = last_mouse_pos[1] - my
+            world.camera_x += dx
+            world.camera_y += dy
+            world.clamp_camera()
+            last_mouse_pos = (mx, my)
 
         elif event.type == pygame.MOUSEWHEEL:
             mouse_x, mouse_y = pygame.mouse.get_pos()

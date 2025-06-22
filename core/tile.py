@@ -5,4 +5,4 @@ class Tile:
         self.highlighted = False
 
     def is_buildable(self):
-        return self.type in {"grass"}
+        return self.type in {"clear"}

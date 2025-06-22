@@ -6,7 +6,7 @@ from core.machine import Machine
 class World:
     def __init__(self):
         self.grid = [
-            [Tile("grass") for _ in range(GRID_WIDTH)]
+            [Tile("clear") for _ in range(GRID_WIDTH)]
             for _ in range(GRID_HEIGHT)
         ]
         # Add resource tiles
@@ -80,12 +80,21 @@ class World:
                     py = y * scaled_tile - offset_y_camera + offset_y
 
                     rect = pygame.Rect(int(px), int(py), int(scaled_tile), int(scaled_tile))
-                    
                     pygame.draw.rect(screen, color, rect)
-                    pygame.draw.rect(screen, (40, 40, 40), rect, 1)
 
                     if tile.building:
                         tile.building.draw(screen, grid_x, grid_y, self.camera_x, self.camera_y, self.zoom, offset_y)
+        
+        # --- Draw grid lines overlay ---
+        # Vertical lines
+        for x in range(tiles_x + 1):
+            px = int(x * scaled_tile - offset_x_camera)
+            pygame.draw.line(screen, BLUEPRINT_BG, (px, offset_y), (px, SCREEN_HEIGHT))
+
+        # Horizontal lines
+        for y in range(tiles_y + 1):
+            py = int(y * scaled_tile - offset_y_camera + offset_y)
+            pygame.draw.line(screen, BLUEPRINT_BG, (0, py), (SCREEN_WIDTH, py))
 
     def move_camera(self, dx, dy):
         move_px = self.camera_speed
@@ -105,8 +114,14 @@ class World:
         self.clamp_camera()
 
     def adjust_zoom(self, delta, mouse_x, mouse_y, offset_y=0):
-        old_zoom = self.zoom
-        new_zoom = max(self.min_zoom, min(self.zoom + delta, self.max_zoom))
+        # Defined zoom levels
+        zoom_levels = [0.5, 1.0, 1.5, 2.0]
+        current_index = zoom_levels.index(min(zoom_levels, key=lambda z: abs(z - self.zoom)))
+        new_index = current_index + int(delta)
+
+        # Clamp index
+        new_index = max(0, min(new_index, len(zoom_levels) - 1))
+        new_zoom = zoom_levels[new_index]
 
         if new_zoom == self.zoom:
             return  # No change
@@ -116,8 +131,8 @@ class World:
         world_y = self.camera_y + (mouse_y - offset_y)
 
         # 2. Find ratio of that point relative to current zoom
-        ratio_x = world_x / old_zoom
-        ratio_y = world_y / old_zoom
+        ratio_x = world_x / self.zoom
+        ratio_y = world_y / self.zoom
 
         # 3. Apply new zoom and set camera so that mouse stays on same world tile
         self.zoom = new_zoom
