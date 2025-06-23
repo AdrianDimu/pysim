@@ -1,5 +1,8 @@
 import pygame
-from config import SCREEN_WIDTH
+from config import SCREEN_WIDTH, SCREEN_HEIGHT
+
+TOP_UI_PADDING = 5
+UI_BOTTOM_HEIGHT = 120  # Height of the bottom UI panel
 
 class GUI:
     def __init__(self, font_size=16):
@@ -8,15 +11,46 @@ class GUI:
         self.text_color = (255, 255, 255)
         self.padding = 5
         self.line_height = font_size + 4
+        self.padding = TOP_UI_PADDING
 
-        self.last_height = 0
 
-    def draw(self, screen, debug_lines):
-        bar_height = len(debug_lines) * self.line_height + 2 * self.padding
-        self.last_height = bar_height  # Save for world offset
+        self.top_height = 0          # Updated in draw()
+        self.bottom_height = UI_BOTTOM_HEIGHT
 
-        pygame.draw.rect(screen, self.bg_color, (0, 0, SCREEN_WIDTH, bar_height))
+    def draw(self, screen, debug_lines=None, items=None, selected_index=None):
+        # --- Top UI bar (e.g. debug)
+        self.top_height = len(debug_lines) * self.line_height + 2 * self.padding if debug_lines else 0
+        pygame.draw.rect(screen, self.bg_color, (0, 0, SCREEN_WIDTH, self.top_height))
 
-        for i, line in enumerate(debug_lines):
-            text_surf = self.font.render(line, True, self.text_color)
-            screen.blit(text_surf, (self.padding, self.padding + i * self.line_height))
+        if debug_lines:
+            for i, line in enumerate(debug_lines):
+                text_surf = self.font.render(line, True, self.text_color)
+                screen.blit(text_surf, (self.padding, self.padding + i * self.line_height))
+
+        # --- Bottom UI bar (e.g. items)
+        ui_rect = pygame.Rect(0, SCREEN_HEIGHT - self.bottom_height, SCREEN_WIDTH, self.bottom_height)
+        pygame.draw.rect(screen, (40, 40, 40), ui_rect)
+
+        if items:
+            self.draw_item_buttons(screen, items, selected_index)
+
+    def draw_item_buttons(self, screen, items, selected_index):
+        button_width = 100
+        button_height = 80
+        padding = 10
+        y = SCREEN_HEIGHT - self.bottom_height + 20
+
+        for i, item in enumerate(items):
+            x = padding + i * (button_width + padding)
+            rect = pygame.Rect(x, y, button_width, button_height)
+
+            color = (70, 70, 70)
+            if i == selected_index:
+                color = (100, 100, 200)
+
+            pygame.draw.rect(screen, color, rect)
+            pygame.draw.rect(screen, (200, 200, 200), rect, 2)
+
+            label = self.font.render(item.name, True, self.text_color)
+            label_rect = label.get_rect(center=rect.center)
+            screen.blit(label, label_rect)

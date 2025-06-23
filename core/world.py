@@ -15,8 +15,8 @@ class World(BaseGrid):
         grid[4][6] = Tile("limestone")
         return grid
 
-    def update(self, dt):
-        self.update_camera(dt)
+    def update(self, dt, offset_top=0, offset_bottom=0):
+        self.update_camera(dt, offset_top=offset_top, offset_bottom=offset_bottom)
 
         for row in self.grid:
             for tile in row:
@@ -24,39 +24,20 @@ class World(BaseGrid):
                     tile.building.update(dt)
 
     def draw(self, screen, offset_y=0):
-        scaled_tile = TILE_SIZE * self.zoom
+        def draw_tile(screen, tile, gx, gy, x, y, scaled_tile, offset_x, offset_y_camera, offset_top):
+            color = tile.get_color()
+            if tile.highlighted:
+                color = tuple(min(c + 40, 255) for c in color)
 
-        tiles_x = SCREEN_WIDTH // int(scaled_tile) + 2
-        tiles_y = SCREEN_HEIGHT // int(scaled_tile) + 2
+            px = x * scaled_tile - offset_x
+            py = y * scaled_tile - offset_y_camera + offset_top
+            rect = pygame.Rect(int(px), int(py), int(scaled_tile), int(scaled_tile))
+            pygame.draw.rect(screen, color, rect)
 
-        start_x_camera = int(self.camera_x // scaled_tile)
-        start_y_camera = int(self.camera_y // scaled_tile)
+            if tile.building:
+                tile.building.draw(screen, gx, gy, self.camera_x, self.camera_y, self.zoom, offset_top)
 
-        offset_x_camera = self.camera_x % scaled_tile
-        offset_y_camera = self.camera_y % scaled_tile
-
-        for y in range(tiles_y):
-            for x in range(tiles_x):
-                grid_x = start_x_camera + x
-                grid_y = start_y_camera + y
-
-                if 0 <= grid_x < GRID_WIDTH and 0 <= grid_y < GRID_HEIGHT:
-                    tile = self.grid[grid_y][grid_x]
-                    color = tile.get_color()
-                    if tile.highlighted:
-                        color = tuple(min(c + 40, 255) for c in color)
-
-                    px = x * scaled_tile - offset_x_camera
-                    py = y * scaled_tile - offset_y_camera + offset_y
-
-                    rect = pygame.Rect(int(px), int(py), int(scaled_tile), int(scaled_tile))
-                    pygame.draw.rect(screen, color, rect)
-
-                    if tile.building:
-                        tile.building.draw(screen, grid_x, grid_y, self.camera_x, self.camera_y, self.zoom, offset_y)
-
-        # Grid overlay
-        self.draw_grid_overlay(screen, tiles_x, tiles_y, offset_x_camera, offset_y_camera, offset_y)
+        self.draw_tiles_and_grid(screen, offset_top=offset_y, draw_tile_fn=draw_tile)
 
     def clear_highlight(self):
         for row in self.grid:
