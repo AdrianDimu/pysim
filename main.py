@@ -22,23 +22,20 @@ while True:
     dt = clock.tick(FPS)
     screen.fill(BACKGROUND_COLOR)
 
-    # Update
-    if build_mode:
-        build_grid.update(dt)
-    else:
-        world.update(dt)
+    target = build_grid if build_mode else world
+    offset_y = 0 if build_mode else gui.last_height
+
+    # --- Update
+    target.update(dt)
     
-    # Handle events
+    # --- Events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit(); sys.exit()
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                if build_mode:
-                    build_grid.place_machine_at(*pygame.mouse.get_pos())
-                else:
-                    world.place_machine_at(*pygame.mouse.get_pos(), offset_y=gui.last_height)
+                target.place_at(*pygame.mouse.get_pos(), offset_y=offset_y)
             elif event.button == 2:
                 is_panning = True
                 last_mouse_pos = pygame.mouse.get_pos()
@@ -46,69 +43,46 @@ while True:
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 2:
                 is_panning = False
-        
+
         elif event.type == pygame.MOUSEMOTION and is_panning:
             mx, my = pygame.mouse.get_pos()
             dx = last_mouse_pos[0] - mx
             dy = last_mouse_pos[1] - my
-            if build_mode:
-                build_grid.camera_x += dx
-                build_grid.camera_y += dy
-                build_grid.clamp_camera()
-            else:
-                world.camera_x += dx
-                world.camera_y += dy
-                world.clamp_camera()
+            target.camera_x += dx
+            target.camera_y += dy
+            target.clamp_camera()
             last_mouse_pos = (mx, my)
 
         elif event.type == pygame.MOUSEWHEEL:
             mouse_x, mouse_y = pygame.mouse.get_pos()
             delta = event.y * 0.5
-            if build_mode:
-                build_grid.adjust_zoom(delta, mouse_x, mouse_y)
-            else:
-                world.adjust_zoom(delta, mouse_x, mouse_y, offset_y=gui.last_height)
-        
+            target.adjust_zoom(delta, mouse_x, mouse_y, offset_y=offset_y)
+
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_b:
                 build_mode = not build_mode
                 print("Build mode ON" if build_mode else "World mode ON")
 
-
-    # Smooth camera acceleration based on key state
+    ## --- Smooth camera motion
     keys = pygame.key.get_pressed()
-
-    target = build_grid if build_mode else world
     target.camera_ax = 0
     target.camera_ay = 0
-
     if keys[pygame.K_w]: target.camera_ay = -target.scroll_accel
     if keys[pygame.K_s]: target.camera_ay = target.scroll_accel
     if keys[pygame.K_a]: target.camera_ax = -target.scroll_accel
     if keys[pygame.K_d]: target.camera_ax = target.scroll_accel
 
-    # Mouse highlight
+    # --- Highlight
     mouse_x, mouse_y = pygame.mouse.get_pos()
-    if build_mode:
-        build_grid.clear_highlight()
-        build_grid.highlight_tile_at(mouse_x, mouse_y)
-    else:
-        world.clear_highlight()
-        world.highlight_tile_at(mouse_x, mouse_y, offset_y=gui.last_height)
+    target.clear_highlight()
+    target.highlight_tile_at(mouse_x, mouse_y, offset_y=offset_y)
 
-    # Draw world
-    if build_mode:
-        build_grid.draw(screen)
-    else:
-        world.draw(screen, offset_y=gui.last_height)
+    # --- Draw world/buildgrid
+    target.draw(screen, offset_y=offset_y)
 
-    # Debug Info Overlay
-    if build_mode:
-        grid_x, grid_y = build_grid.screen_to_grid(mouse_x, mouse_y)
-        tile = build_grid.grid[grid_y][grid_x]
-    else:
-        grid_x, grid_y = world.screen_to_grid(mouse_x, mouse_y, offset_y=gui.last_height)
-        tile = world.grid[grid_y][grid_x]
+    # --- Debug
+    grid_x, grid_y = target.screen_to_grid(mouse_x, mouse_y, offset_y=offset_y)
+    tile = target.grid[grid_y][grid_x]
 
     tile_info = f"{tile.type}"
     if tile.building:
@@ -120,7 +94,7 @@ while True:
         f"Mouse Screen: ({mouse_x}, {mouse_y})",
         f"Mouse Grid: ({grid_x}, {grid_y})",
         f"Tile: {tile_info}",
-        f"Camera: ({int(world.camera_x)}, {int(world.camera_y)})"
+        f"Camera: ({int(target.camera_x)}, {int(target.camera_y)})"
     ]
     gui.draw(screen, debug_lines)
 
