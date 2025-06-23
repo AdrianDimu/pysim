@@ -116,10 +116,12 @@ class World:
     def adjust_zoom(self, delta, mouse_x, mouse_y, offset_y=0):
         # Defined zoom levels
         zoom_levels = [0.5, 1.0, 1.5, 2.0]
-        current_index = zoom_levels.index(min(zoom_levels, key=lambda z: abs(z - self.zoom)))
-        new_index = current_index + int(delta)
 
-        # Clamp index
+        # Find the closest zoom level to current
+        closest_zoom = min(zoom_levels, key=lambda z: abs(z - self.zoom))
+        current_index = zoom_levels.index(closest_zoom)
+
+        new_index = current_index + int(delta / 0.5)
         new_index = max(0, min(new_index, len(zoom_levels) - 1))
         new_zoom = zoom_levels[new_index]
 
