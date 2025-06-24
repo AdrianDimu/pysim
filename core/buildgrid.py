@@ -1,7 +1,8 @@
 from config import *
 from core.tile import Tile
-from core.machine import Machine
+from core.building import Building
 from core.basegrid import BaseGrid
+from core.component import Component
 import pygame
 
 class BuildGrid(BaseGrid):
@@ -39,8 +40,46 @@ class BuildGrid(BaseGrid):
         if 0 <= gx < GRID_WIDTH and 0 <= gy < GRID_HEIGHT:
             self.grid[gy][gx].highlighted = True
 
-    def place_at(self, pixel_x, pixel_y, offset_y=0):
-        print("[BuildGrid] Placement ignored – components will be implemented later.")
+    def place_at(self, pixel_x, pixel_y, offset_y=0, item=None):
+        gx, gy = self.screen_to_grid(pixel_x, pixel_y, offset_y)
+        if not item or not (0 <= gx < GRID_WIDTH and 0 <= gy < GRID_HEIGHT):
+            return
+
+        w, h = item.size
+
+        # Check if the component fits
+        if gx + w > GRID_WIDTH or gy + h > GRID_HEIGHT:
+            return
+
+        # Ensure all tiles are buildable and empty
+        for y in range(h):
+            for x in range(w):
+                tile = self.grid[gy + y][gx + x]
+                if not tile.is_buildable() or tile.building:
+                    return  # Abort placement
+
+        # Create a new instance for this placement
+        new_component = Component(item.name, item.color, item.size)
+
+        # Place the component
+        for y in range(h):
+            for x in range(w):
+                self.grid[gy + y][gx + x].building = new_component
 
     def remove_at(self, pixel_x, pixel_y, offset_y=0):
-        print("[BuildGrid] Removal ignored – components will be implemented later.")
+        gx, gy = self.screen_to_grid(pixel_x, pixel_y, offset_y)
+        if not (0 <= gx < GRID_WIDTH and 0 <= gy < GRID_HEIGHT):
+            return
+
+        target_tile = self.grid[gy][gx]
+        component = target_tile.building
+        if not component:
+            return
+
+        w, h = component.size
+
+        # Remove only this instance
+        for y in range(GRID_HEIGHT):
+            for x in range(GRID_WIDTH):
+                if self.grid[y][x].building == component:
+                    self.grid[y][x].building = None

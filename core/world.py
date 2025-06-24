@@ -1,7 +1,7 @@
 import pygame
 from config import *
 from core.tile import Tile
-from core.machine import Machine
+from core.building import Building
 from core.basegrid import BaseGrid
 
 class World(BaseGrid):
@@ -54,9 +54,21 @@ class World(BaseGrid):
         if 0 <= gx < GRID_WIDTH and 0 <= gy < GRID_HEIGHT and item:
             tile = self.grid[gy][gx]
             if tile.is_buildable() and tile.building is None:
-                tile.building = Machine(item.name, item.color)
+                # Create a unique instance
+                tile.building = Building(item.name, item.color)
     
     def remove_at(self, pixel_x, pixel_y, offset_y=0):
         gx, gy = self.screen_to_grid(pixel_x, pixel_y, offset_y)
-        if 0 <= gx < GRID_WIDTH and 0 <= gy < GRID_HEIGHT:
-            self.grid[gy][gx].building = None
+        if not (0 <= gx < GRID_WIDTH and 0 <= gy < GRID_HEIGHT):
+            return
+
+        target_tile = self.grid[gy][gx]
+        building = target_tile.building
+        if not building:
+            return
+
+        # Remove all tiles that share this building instance
+        for y in range(GRID_HEIGHT):
+            for x in range(GRID_WIDTH):
+                if self.grid[y][x].building == building:
+                    self.grid[y][x].building = None

@@ -1,21 +1,32 @@
-import pygame, sys
+import pygame, sys, json
 from config import *
 from core.world import World
 from core.buildgrid import BuildGrid
-from core.machine import Machine
+from core.building import Building
+from core.component import Component
 from core.gui import GUI
 
+# --- Init
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("pysim")
 clock = pygame.time.Clock()
 
-available_items = [
-    Machine("TST", (150, 200, 255)),
-    Machine("TST2", (255, 180, 80))
-]
-selected_item_index = 0  # Default to TST
+# --- Load data
+with open("data/buildings.json") as f:
+    BUILDING_DATA = json.load(f)
 
+with open("data/components.json") as f:
+    COMPONENT_DATA = json.load(f)
+
+available_buildings = [
+    Building(name, tuple(data["color"])) for name, data in BUILDING_DATA.items()
+]
+available_components = [
+    Component(name, tuple(data["color"]), tuple(data["size"])) for name, data in COMPONENT_DATA.items()
+]
+
+# --- Game state
 gui = GUI()
 world = World()
 build_grid = BuildGrid()
@@ -25,11 +36,13 @@ build_mode = False
 is_panning = False
 last_mouse_pos = (0, 0)
 
+# --- Main loop
 while True:
     dt = clock.tick(FPS)
     screen.fill(BACKGROUND_COLOR)
 
     target = build_grid if build_mode else world
+    available_items = available_components if build_mode else available_buildings
 
     # --- Offset calculations
     offset_top = gui.top_height
@@ -45,26 +58,23 @@ while True:
             pygame.quit(); sys.exit()
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
             top_bound = gui.top_height
             bottom_bound = SCREEN_HEIGHT - gui.bottom_height
 
-            if event.button == 1:
-                # Left click
+            if event.button == 1: # Left click
                 index = gui.get_clicked_item_index(mouse_x, mouse_y, available_items)
                 if index is not None:
                     selected_index = index
                 elif top_bound <= mouse_y <= bottom_bound and selected_index is not None:
-                    if 0 <= selected_index < len(available_items):
-                        item = available_items[selected_index]
-                        target.place_at(mouse_x, mouse_y, offset_y=gui_offset, item=item)
+                    item = available_items[selected_index]
+                    target.place_at(mouse_x, mouse_y, offset_y=gui_offset, item=item)
 
-            elif event.button == 3:
-                # Right click to remove
+            elif event.button == 3: # Right click to remove
                 if top_bound <= mouse_y <= bottom_bound:
                     target.remove_at(mouse_x, mouse_y, offset_y=gui_offset)
                                     
-            elif event.button == 2:
-                # Middle click for panning
+            elif event.button == 2: # Middle click for panning
                 is_panning = True
                 last_mouse_pos = pygame.mouse.get_pos()
 
@@ -90,6 +100,7 @@ while True:
             if event.key == pygame.K_b:
                 build_mode = not build_mode
                 print("Build mode ON" if build_mode else "World mode ON")
+                selected_index = None # reset selection when switching mode
 
     ## --- Smooth camera motion
     keys = pygame.key.get_pressed()
@@ -125,6 +136,13 @@ while True:
         f"Tile: {tile_info}",
         f"Camera: ({int(target.camera_x)}, {int(target.camera_y)})"
     ]
-    gui.draw(screen, debug_lines, items=available_items if not build_mode else None, selected_index=selected_index if not build_mode else None)
+
+    # --- GUI
+    gui.draw(
+        screen, 
+        debug_lines, 
+        items=available_items,
+        selected_index=selected_index
+    )
 
     pygame.display.flip()

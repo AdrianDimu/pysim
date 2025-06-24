@@ -4,10 +4,10 @@ from config import TILE_SIZE
 from core.inventory import Inventory
 
 # Load recipes once globally
-with open("data/recipes.json") as f:
+with open("data/buildings.json") as f:
     RECIPES = json.load(f)
 
-class Machine:
+class Building:
     def __init__(self, name, color):
         self.name = name
         self.color = color

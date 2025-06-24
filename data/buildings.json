@@ -1,0 +1,14 @@
+{
+  "TST": {
+    "color": [150, 200, 255],
+    "process_time": 1000,
+    "inputs": { "iron": 1 },
+    "outputs": { "steel": 1 }
+  },
+  "TST2": {
+    "color": [255, 180, 80],
+    "process_time": 800,
+    "inputs": { "copper": 1 },
+    "outputs": { "wire": 2 }
+  }
+}
