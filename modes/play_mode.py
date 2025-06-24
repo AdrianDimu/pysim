@@ -1,19 +1,19 @@
 import pygame
-from config import *
-from core.tile import Tile
-from core.building import Building
-from core.component import Component
-from core.basegrid import BaseGrid
+from settings import *
+from systems.tile import Tile
+from systems.building import Building
+from systems.component import Component
+from systems.basegrid import BaseGrid
 
 class World(BaseGrid):
     def __init__(self):
         super().__init__()
 
     def generate_grid(self):
-        grid = [[Tile("clear") for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
-        grid[5][5] = Tile("iron_ore")
-        grid[6][7] = Tile("coal")
-        grid[4][6] = Tile("limestone")
+        grid = [[Tile("basic") for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+        grid[5][5] = Tile("resource", "iron")
+        grid[6][7] = Tile("resource", "coal")
+        grid[4][6] = Tile("resource", "limestone")
         return grid
 
     def update(self, dt, offset_top=0, offset_bottom=0):
@@ -73,11 +73,11 @@ class World(BaseGrid):
         if not building:
             return
 
+        group_id = getattr(building, "group_id", None)
+
         # Remove all tiles that share this building instance
         for y in range(GRID_HEIGHT):
             for x in range(GRID_WIDTH):
                 tile = self.grid[y][x]
-                if tile.building == building:
-                    tile.building = None
-                    if tile.type == "building":
-                        tile.type = "clear"
+                if tile.building and getattr(tile.building, "group_id", None) == group_id:
+                    tile.clear()

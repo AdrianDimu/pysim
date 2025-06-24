@@ -1,6 +1,6 @@
 import abc
 import pygame
-from config import *
+from settings import *
 
 class BaseGrid(abc.ABC):
     def __init__(self):
@@ -17,7 +17,7 @@ class BaseGrid(abc.ABC):
         self.zoom = 1.0
         self.min_zoom = 0.5
         self.max_zoom = 2.0
-        
+
         self.grid = self.generate_grid()
 
     def screen_to_grid(self, pixel_x, pixel_y, offset_y=0):
@@ -85,17 +85,15 @@ class BaseGrid(abc.ABC):
         self.camera_y += self.camera_vy * seconds
         self.clamp_camera(offset_top=offset_top, offset_bottom=offset_bottom)
 
-    def draw_grid_overlay(self, screen, tiles_x, tiles_y, offset_x, offset_y, gui_offset=0):
+    def draw_grid_overlay(self, screen, tiles_x, tiles_y, cam_offset_x, cam_offset_y, gui_offset=0):
         scaled_tile = TILE_SIZE * self.zoom
 
-        # Vertical lines
         for x in range(tiles_x + 1):
-            px = int(x * scaled_tile - offset_x)
+            px = int(x * scaled_tile - cam_offset_x)
             pygame.draw.line(screen, BLUEPRINT_BG, (px, gui_offset), (px, SCREEN_HEIGHT))
 
-        # Horizontal lines
         for y in range(tiles_y + 1):
-            py = int(y * scaled_tile - offset_y + gui_offset)
+            py = int(y * scaled_tile - cam_offset_y + gui_offset)
             pygame.draw.line(screen, BLUEPRINT_BG, (0, py), (SCREEN_WIDTH, py))
 
     def draw_tiles_and_grid(self, screen, offset_top=0, offset_bottom=0, draw_tile_fn=None):
@@ -109,8 +107,8 @@ class BaseGrid(abc.ABC):
         start_x = int(self.camera_x // scaled_tile)
         start_y = int(self.camera_y // scaled_tile)
 
-        offset_x = self.camera_x % scaled_tile
-        offset_y = self.camera_y % scaled_tile
+        cam_offset_x = self.camera_x % scaled_tile
+        cam_offset_y = self.camera_y % scaled_tile
 
         for y in range(tiles_y):
             for x in range(tiles_x):
@@ -121,25 +119,29 @@ class BaseGrid(abc.ABC):
                     if draw_tile_fn:
                         draw_tile_fn(
                             screen, tile, gx, gy, x, y,
-                            scaled_tile, offset_x, offset_y, offset_top
+                            scaled_tile, cam_offset_x, cam_offset_y, offset_top
                         )
 
-        self.draw_grid_overlay(screen, tiles_x, tiles_y, offset_x, offset_y, gui_offset=offset_top)
+        self.draw_grid_overlay(screen, tiles_x, tiles_y, cam_offset_x, cam_offset_y, gui_offset=offset_top)
 
+    def clear_highlight(self):
+        for row in self.grid:
+            for tile in row:
+                tile.clear_highlight()
+                
+    def highlight_tile_at(self, pixel_x, pixel_y, offset_y=0):
+        grid_x, grid_y = self.screen_to_grid(pixel_x, pixel_y, offset_y)
+        if 0 <= grid_x < GRID_WIDTH and 0 <= grid_y < GRID_HEIGHT:
+            self.grid[grid_y][grid_x].highlighted = True
+            
     @abc.abstractmethod
     def generate_grid(self): pass
-    
+
     @abc.abstractmethod
     def draw(self, screen, offset_y=0): pass
 
     @abc.abstractmethod
     def update(self, dt, offset_top=0, offset_bottom=0): pass
-
-    @abc.abstractmethod
-    def clear_highlight(self): pass
-
-    @abc.abstractmethod
-    def highlight_tile_at(self, pixel_x, pixel_y, offset_y=0): pass
 
     @abc.abstractmethod
     def place_at(self, pixel_x, pixel_y, offset_y=0): pass

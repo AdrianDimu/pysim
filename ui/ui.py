@@ -1,5 +1,5 @@
 import pygame
-from config import SCREEN_WIDTH, SCREEN_HEIGHT
+from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 
 TOP_UI_PADDING = 5
 UI_BOTTOM_HEIGHT = 120  # Height of the bottom UI panel

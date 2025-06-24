@@ -1,7 +1,9 @@
 import json, os
-from core.component import Component
-from config import TILE_SIZE, GRID_WIDTH, GRID_HEIGHT
 import pygame
+from systems.component import Component
+from systems.building import Building
+from settings import TILE_SIZE, GRID_WIDTH, GRID_HEIGHT
+import uuid
 
 with open(os.path.join("data", "components.json")) as f:
     COMPONENT_DATA = json.load(f)
@@ -18,7 +20,7 @@ class Blueprint:
                 for comp in self.components
             ]
         }
-    
+
     def can_place_at(self, grid, grid_x, grid_y):
         for comp in self.components:
             cx, cy = comp["pos"]
@@ -28,16 +30,25 @@ class Blueprint:
                 return False
 
             tile = grid[ty][tx]
-            if not tile.is_buildable():
+            comp_data = COMPONENT_DATA.get(comp["type"], {})
+            color = tuple(comp_data.get("color", (100, 100, 100)))
+            size = tuple(comp_data.get("size", [1, 1]))
+            valid_tile_types = comp_data.get("valid_tile_types", [])
+            valid_subtypes = comp_data.get("valid_subtypes", [])
+
+            virtual_comp = Component(comp["type"], color, size, valid_tile_types, valid_subtypes)
+
+            if not tile.is_placeable_by(virtual_comp):
                 return False
 
         return True
 
-    
     def instantiate(self, grid, grid_x, grid_y):
         if not self.can_place_at(grid, grid_x, grid_y):
             print(f"[Blueprint] Invalid placement at ({grid_x}, {grid_y})")
-            return  # Don't place anything
+            return
+        
+        group_id = str(uuid.uuid4())  # unique per blueprint placement
 
         for comp in self.components:
             cx, cy = comp["pos"]
@@ -47,17 +58,15 @@ class Blueprint:
             if 0 <= tx < GRID_WIDTH and 0 <= ty < GRID_HEIGHT:
                 tile = grid[ty][tx]
                 if tile.building is None:
-                    component_data = COMPONENT_DATA[comp["type"]]
-                    color = tuple(component_data["color"])
-                    size = tuple(component_data.get("size", [1, 1]))
-                    tile.building = Component(comp["type"], color, size)
-                    tile.type = "building"  # mark tile as occupied
+                    comp_data = COMPONENT_DATA.get(comp["type"], {})
+                    color = tuple(comp_data.get("color", (100, 100, 100)))
+                    building = Building(comp["type"], color, group_id=group_id)
+                    tile.set_occupied(building)
 
     def save_to_file(self, path):
         if not self.components:
             return
-        
-        # Normalize positions so first component is at (0,0)
+
         origin_x, origin_y = self.components[0]["pos"]
         normalized = [
             {
@@ -91,18 +100,25 @@ class Blueprint:
             invalid = False
             if not (0 <= tx < GRID_WIDTH and 0 <= ty < GRID_HEIGHT):
                 invalid = True
-            elif grid and not grid[ty][tx].is_clear():
-                invalid = True
+            elif grid:
+                comp_data = COMPONENT_DATA.get(comp["type"], {})
+                color = tuple(comp_data.get("color", (100, 100, 100)))
+                size = tuple(comp_data.get("size", [1, 1]))
+                valid_tile_types = comp_data.get("valid_tile_types", [])
+                valid_subtypes = comp_data.get("valid_subtypes", [])
+                virtual_comp = Component(comp["type"], color, size, valid_tile_types, valid_subtypes)
+
+                if not grid[ty][tx].is_placeable_by(virtual_comp):
+                    invalid = True
 
             # --- Draw red or green highlight underlay
             tile_highlight = pygame.Surface((tile_px, tile_px), pygame.SRCALPHA)
             tile_highlight.fill((255, 0, 0, 80) if invalid else (0, 255, 0, 60))
             screen.blit(tile_highlight, (int(px), int(py)))
 
-            # --- Draw component ghost (THIS MUST BE INSIDE THE LOOP!)
-            comp_data = COMPONENT_DATA.get(comp["type"], {})
-            color = tuple(comp_data.get("color", (100, 100, 100)))
-            size = tuple(comp_data.get("size", [1, 1]))
+            # --- Draw component ghost
+            color = tuple(COMPONENT_DATA.get(comp["type"], {}).get("color", (100, 100, 100)))
+            size = tuple(COMPONENT_DATA.get(comp["type"], {}).get("size", [1, 1]))
 
             width = size[0] * tile_px - int(8 * zoom)
             height = size[1] * tile_px - int(8 * zoom)
@@ -116,21 +132,13 @@ class Blueprint:
         if not self.components:
             return
 
-        # Find max x and y to rotate around origin
         max_x = max(comp["pos"][0] for comp in self.components)
         max_y = max(comp["pos"][1] for comp in self.components)
 
-        rotated = []
-        for comp in self.components:
-            x, y = comp["pos"]
-            new_x = max_y - y
-            new_y = x
-            rotated.append({
-                "type": comp["type"],
-                "pos": (new_x, new_y)
-            })
-        
-        self.components = rotated
+        self.components = [
+            {"type": comp["type"], "pos": (max_y - comp["pos"][1], comp["pos"][0])}
+            for comp in self.components
+        ]
 
     def flip_horizontal(self):
         if not self.components:

@@ -1,15 +1,19 @@
 import pygame
-from config import TILE_SIZE
+from settings import TILE_SIZE
 
 class Component:
-    def __init__(self, name, color, size=(1, 1)):
+    def __init__(self, name, color, size=(1, 1), valid_tile_types=None, valid_subtypes=None):
         self.name = name
         self.color = color
         self.size = size  # (width, height)
-    
+        self.valid_tile_types = valid_tile_types or []
+        self.valid_subtypes = valid_subtypes or []
+
+    def update(self, dt):
+        pass
+
     def draw(self, screen, grid_x, grid_y, cam_x, cam_y, zoom, offset_y):
         tile_px = TILE_SIZE * zoom
-
         px = grid_x * tile_px - cam_x
         py = grid_y * tile_px - cam_y + offset_y
 
@@ -25,7 +29,3 @@ class Component:
         )
 
         pygame.draw.rect(screen, self.color, rect)
-        #pygame.draw.rect(screen, (200, 200, 200), rect, 2)  # Optional border for visibility
-
-    def update(self, dt):
-        pass  # World expects this; do nothing for now

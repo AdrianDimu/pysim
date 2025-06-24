@@ -2,21 +2,21 @@
   "name": "DrillRig",
   "components": [
     {
-      "type": "DRILL",
+      "type": "Drill",
       "pos": [
         0,
         0
       ]
     },
     {
-      "type": "POW",
+      "type": "Power",
       "pos": [
         1,
         0
       ]
     },
     {
-      "type": "STOR",
+      "type": "Storage",
       "pos": [
         1,
         1
