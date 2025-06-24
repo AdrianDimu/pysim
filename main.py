@@ -6,7 +6,7 @@ from systems.blueprint import Blueprint
 from systems.loaders import load_blueprints
 from systems.building import Building
 from systems.component import Component
-from ui.ui import GUI
+from ui.ui import GUI, BlueprintNamingOverlay
 
 # --- Init
 pygame.init()
@@ -38,6 +38,10 @@ gui = GUI()
 world = World()
 build_grid = BuildGrid()
 
+font = pygame.font.SysFont("monospace", 24)
+naming_overlay = BlueprintNamingOverlay(font, 200, 200, 400)
+
+naming_active = False
 selected_index = None
 build_mode = False
 is_panning = False
@@ -47,6 +51,7 @@ try:
     # --- Main loop
     while True:
         dt = clock.tick(FPS)
+        naming_overlay.update(dt)
         screen.fill(BACKGROUND_COLOR)
 
         target = build_grid if build_mode else world
@@ -63,6 +68,36 @@ try:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
+
+            # --- If naming overlay is active, block all other input
+            if naming_overlay.active:
+                # Block mouse events
+                if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL):
+                    continue
+
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        naming_overlay.close()
+                        print("[Blueprint] Naming canceled")
+                        continue
+
+                    elif event.key == pygame.K_RETURN:
+                        name = naming_overlay.text.strip()
+                        naming_overlay.close()
+
+                        if name:
+                            components = build_grid.extract_blueprint_components()
+                            if components:
+                                blueprint = Blueprint(name, components)
+                                blueprint.save_to_file(f"data/blueprints/{name}.json")
+
+                                # Reload blueprint list after saving
+                                available_buildings = load_blueprints()
+                        continue
+
+                # Let the overlay handle text input and backspace
+                naming_overlay.handle_event(event)
+                continue  # still block everything else
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -114,11 +149,7 @@ try:
                     selected_index = None
 
                 elif event.key == pygame.K_q and build_mode:
-                    components = build_grid.extract_blueprint_components()
-                    if components:
-                        blueprint = Blueprint("DrillRig", components)
-                        blueprint.save_to_file("data/blueprints/DrillRig.json")
-                        print("Blueprint saved as DrillRig.json")
+                    naming_overlay.open()
 
                 elif event.key == pygame.K_r and not build_mode and selected_index is not None:
                     selected_item = available_items[selected_index]
@@ -139,13 +170,17 @@ try:
                         print(f"Flipped blueprint '{selected_item.name}' vertically")
 
         # --- Smooth camera motion
-        keys = pygame.key.get_pressed()
-        target.camera_ax = 0
-        target.camera_ay = 0
-        if keys[pygame.K_w]: target.camera_ay = -target.scroll_accel
-        if keys[pygame.K_s]: target.camera_ay = target.scroll_accel
-        if keys[pygame.K_a]: target.camera_ax = -target.scroll_accel
-        if keys[pygame.K_d]: target.camera_ax = target.scroll_accel
+        if not naming_overlay.active:
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_w]:
+                target.camera_y -= 10 * target.zoom
+            if keys[pygame.K_s]:
+                target.camera_y += 10 * target.zoom
+            if keys[pygame.K_a]:
+                target.camera_x -= 10 * target.zoom
+            if keys[pygame.K_d]:
+                target.camera_x += 10 * target.zoom
+            target.clamp_camera(offset_top=offset_top, offset_bottom=offset_bottom)
 
         # --- Highlight logic
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -224,6 +259,8 @@ try:
         # --- Basic hover highlight when no preview active
         else:
             target.highlight_tile_at(mouse_x, mouse_y, offset_y=gui_offset)
+
+        naming_overlay.draw(screen)
 
         # --- Debug overlay
         grid_x, grid_y = target.screen_to_grid(mouse_x, mouse_y, offset_y=gui_offset)

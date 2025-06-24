@@ -5,6 +5,7 @@ TOP_UI_PADDING = 5
 UI_BOTTOM_HEIGHT = 120  # Height of the bottom UI panel
 
 class GUI:
+
     def __init__(self, font_size=16):
         self.font = pygame.font.SysFont("consolas", font_size)
         self.bg_color = (30, 30, 30)
@@ -73,3 +74,58 @@ class GUI:
             if rect.collidepoint(mouse_x, mouse_y):
                 return i
         return None
+
+class BlueprintNamingOverlay:
+    def __init__(self, font, x, y, width):
+        self.font = font
+        self.rect = pygame.Rect(x, y, width, 40)
+        self.active = False
+        self.text = ""
+        self.cursor_visible = True
+        self.cursor_timer = 0
+
+    def open(self):
+        self.active = True
+        self.text = ""
+
+    def close(self):
+        self.active = False
+
+    def handle_event(self, event):
+        if not self.active:
+            return None
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                name = self.text.strip()
+                self.close()
+                return name
+            elif event.key == pygame.K_BACKSPACE:
+                self.text = self.text[:-1]
+            elif event.unicode.isprintable():
+                self.text += event.unicode
+
+        return None
+
+    def update(self, dt):
+        if self.active:
+            self.cursor_timer += dt
+            if self.cursor_timer > 500:
+                self.cursor_timer = 0
+                self.cursor_visible = not self.cursor_visible
+
+    def draw(self, screen):
+        if not self.active:
+            return
+
+        pygame.draw.rect(screen, (30, 30, 30), self.rect)
+        pygame.draw.rect(screen, (200, 200, 200), self.rect, 2)
+
+        text_surf = self.font.render(self.text, True, (255, 255, 255))
+        screen.blit(text_surf, (self.rect.x + 5, self.rect.y + 8))
+
+        # Draw blinking cursor
+        if self.cursor_visible:
+            cursor_x = self.rect.x + 5 + text_surf.get_width() + 2
+            cursor_y = self.rect.y + 8
+            pygame.draw.line(screen, (255, 255, 255), (cursor_x, cursor_y), (cursor_x, cursor_y + 24), 2)

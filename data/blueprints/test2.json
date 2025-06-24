@@ -1,0 +1,110 @@
+{
+  "name": "test2",
+  "components": [
+    {
+      "type": "Drill",
+      "pos": [
+        0,
+        0
+      ]
+    },
+    {
+      "type": "Power",
+      "pos": [
+        1,
+        0
+      ]
+    },
+    {
+      "type": "Power",
+      "pos": [
+        2,
+        0
+      ]
+    },
+    {
+      "type": "Power",
+      "pos": [
+        1,
+        1
+      ]
+    },
+    {
+      "type": "Power",
+      "pos": [
+        2,
+        1
+      ]
+    },
+    {
+      "type": "Power",
+      "pos": [
+        2,
+        2
+      ]
+    },
+    {
+      "type": "Power",
+      "pos": [
+        3,
+        2
+      ]
+    },
+    {
+      "type": "Power",
+      "pos": [
+        4,
+        2
+      ]
+    },
+    {
+      "type": "Power",
+      "pos": [
+        5,
+        2
+      ]
+    },
+    {
+      "type": "Storage",
+      "pos": [
+        2,
+        3
+      ]
+    },
+    {
+      "type": "Storage",
+      "pos": [
+        3,
+        3
+      ]
+    },
+    {
+      "type": "Storage",
+      "pos": [
+        4,
+        3
+      ]
+    },
+    {
+      "type": "Storage",
+      "pos": [
+        5,
+        3
+      ]
+    },
+    {
+      "type": "Storage",
+      "pos": [
+        6,
+        3
+      ]
+    },
+    {
+      "type": "Storage",
+      "pos": [
+        7,
+        3
+      ]
+    }
+  ]
+}

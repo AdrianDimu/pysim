@@ -67,7 +67,11 @@ class Blueprint:
         if not self.components:
             return
 
+        # Get the position of the first component
         origin_x, origin_y = self.components[0]["pos"]
+        print(f"[DEBUG] Normalizing relative to: ({origin_x}, {origin_y})")
+
+        # Shift all components by delta so first one ends at (0, 0)
         normalized = [
             {
                 "type": comp["type"],
@@ -84,6 +88,7 @@ class Blueprint:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w") as f:
             json.dump(data, f, indent=2)
+        print(f"[Blueprint] Saved to {path}")
 
     def draw_preview(self, screen, grid_x, grid_y, cam_x, cam_y, zoom, offset_y, grid=None):
         tile_px = TILE_SIZE * zoom
