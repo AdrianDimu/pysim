@@ -49,10 +49,14 @@ class World(BaseGrid):
         if 0 <= grid_x < GRID_WIDTH and 0 <= grid_y < GRID_HEIGHT:
             self.grid[grid_y][grid_x].highlighted = True
 
-    def place_at(self, pixel_x, pixel_y, offset_y=0):
-        grid_x, grid_y = self.screen_to_grid(pixel_x, pixel_y, offset_y)
-        if 0 <= grid_x < GRID_WIDTH and 0 <= grid_y < GRID_HEIGHT:
-            tile = self.grid[grid_y][grid_x]
+    def place_at(self, pixel_x, pixel_y, offset_y=0, item=None):
+        gx, gy = self.screen_to_grid(pixel_x, pixel_y, offset_y)
+        if 0 <= gx < GRID_WIDTH and 0 <= gy < GRID_HEIGHT and item:
+            tile = self.grid[gy][gx]
             if tile.is_buildable() and tile.building is None:
-                tile.building = Machine("Crusher", (200, 100, 255))
-                tile.building.add_input("Iron Ore", 5)
+                tile.building = Machine(item.name, item.color)
+    
+    def remove_at(self, pixel_x, pixel_y, offset_y=0):
+        gx, gy = self.screen_to_grid(pixel_x, pixel_y, offset_y)
+        if 0 <= gx < GRID_WIDTH and 0 <= gy < GRID_HEIGHT:
+            self.grid[gy][gx].building = None

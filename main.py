@@ -2,6 +2,7 @@ import pygame, sys
 from config import *
 from core.world import World
 from core.buildgrid import BuildGrid
+from core.machine import Machine
 from core.gui import GUI
 
 pygame.init()
@@ -9,10 +10,17 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("pysim")
 clock = pygame.time.Clock()
 
+available_items = [
+    Machine("TST", (150, 200, 255)),
+    Machine("TST2", (255, 180, 80))
+]
+selected_item_index = 0  # Default to TST
+
 gui = GUI()
 world = World()
 build_grid = BuildGrid()
 
+selected_index = None
 build_mode = False
 is_panning = False
 last_mouse_pos = (0, 0)
@@ -37,9 +45,26 @@ while True:
             pygame.quit(); sys.exit()
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
+            top_bound = gui.top_height
+            bottom_bound = SCREEN_HEIGHT - gui.bottom_height
+
             if event.button == 1:
-                target.place_at(*pygame.mouse.get_pos(), offset_y=gui_offset)
+                # Left click
+                index = gui.get_clicked_item_index(mouse_x, mouse_y, available_items)
+                if index is not None:
+                    selected_index = index
+                elif top_bound <= mouse_y <= bottom_bound and selected_index is not None:
+                    if 0 <= selected_index < len(available_items):
+                        item = available_items[selected_index]
+                        target.place_at(mouse_x, mouse_y, offset_y=gui_offset, item=item)
+
+            elif event.button == 3:
+                # Right click to remove
+                if top_bound <= mouse_y <= bottom_bound:
+                    target.remove_at(mouse_x, mouse_y, offset_y=gui_offset)
+                                    
             elif event.button == 2:
+                # Middle click for panning
                 is_panning = True
                 last_mouse_pos = pygame.mouse.get_pos()
 
@@ -100,6 +125,6 @@ while True:
         f"Tile: {tile_info}",
         f"Camera: ({int(target.camera_x)}, {int(target.camera_y)})"
     ]
-    gui.draw(screen, debug_lines)
+    gui.draw(screen, debug_lines, items=available_items if not build_mode else None, selected_index=selected_index if not build_mode else None)
 
     pygame.display.flip()

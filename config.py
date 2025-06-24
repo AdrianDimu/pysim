@@ -1,5 +1,5 @@
 SCREEN_WIDTH = 1024
-SCREEN_HEIGHT = 1024
+SCREEN_HEIGHT = 920
 TILE_SIZE = 32
 
 # Grid is now independent of screen size

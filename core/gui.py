@@ -44,13 +44,32 @@ class GUI:
             x = padding + i * (button_width + padding)
             rect = pygame.Rect(x, y, button_width, button_height)
 
-            color = (70, 70, 70)
             if i == selected_index:
-                color = (100, 100, 200)
+                # Highlight background
+                pygame.draw.rect(screen, (80, 80, 120), rect)
 
+            # Main button color
+            color = (70, 70, 70)
             pygame.draw.rect(screen, color, rect)
-            pygame.draw.rect(screen, (200, 200, 200), rect, 2)
 
+            # Draw border
+            border_color = (255, 255, 0) if i == selected_index else (200, 200, 200)
+            pygame.draw.rect(screen, border_color, rect, 2)
+
+            # Label
             label = self.font.render(item.name, True, self.text_color)
             label_rect = label.get_rect(center=rect.center)
             screen.blit(label, label_rect)
+
+    def get_clicked_item_index(self, mouse_x, mouse_y, items):
+        button_width = 100
+        button_height = 80
+        padding = 10
+        y = SCREEN_HEIGHT - self.bottom_height + 20
+
+        for i, item in enumerate(items):
+            x = padding + i * (button_width + padding)
+            rect = pygame.Rect(x, y, button_width, button_height)
+            if rect.collidepoint(mouse_x, mouse_y):
+                return i
+        return None

@@ -143,3 +143,6 @@ class BaseGrid(abc.ABC):
 
     @abc.abstractmethod
     def place_at(self, pixel_x, pixel_y, offset_y=0): pass
+
+    @abc.abstractmethod
+    def remove_at(self, pixel_x, pixel_y, offset_y=0): pass

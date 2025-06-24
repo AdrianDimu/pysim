@@ -1,12 +1,12 @@
 {
-  "Crusher": {
-    "inputs": {"Iron Ore": 1},
-    "outputs": {"Crushed Ore": 1},
-    "process_time": 3000
+  "TST": {
+    "inputs": {},
+    "outputs": {},
+    "process_time": 1000
   },
-  "Smelter": {
-    "inputs": {"Crushed Ore": 1, "Coal": 1},
-    "outputs": {"Pig Iron": 1},
-    "process_time": 5000
+  "TST2": {
+    "inputs": {},
+    "outputs": {},
+    "process_time": 1000
   }
 }

@@ -40,8 +40,7 @@ class BuildGrid(BaseGrid):
             self.grid[gy][gx].highlighted = True
 
     def place_at(self, pixel_x, pixel_y, offset_y=0):
-        gx, gy = self.screen_to_grid(pixel_x, pixel_y, offset_y)
-        if 0 <= gx < GRID_WIDTH and 0 <= gy < GRID_HEIGHT:
-            tile = self.grid[gy][gx]
-            if tile.is_buildable() and tile.building is None:
-                tile.building = Machine("Drill", (100, 200, 255))
+        print("[BuildGrid] Placement ignored – components will be implemented later.")
+
+    def remove_at(self, pixel_x, pixel_y, offset_y=0):
+        print("[BuildGrid] Removal ignored – components will be implemented later.")
