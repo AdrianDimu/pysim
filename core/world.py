@@ -2,6 +2,7 @@ import pygame
 from config import *
 from core.tile import Tile
 from core.building import Building
+from core.component import Component
 from core.basegrid import BaseGrid
 
 class World(BaseGrid):
@@ -21,13 +22,12 @@ class World(BaseGrid):
         for row in self.grid:
             for tile in row:
                 if tile.building:
+                    tile.clear_highlight()
                     tile.building.update(dt)
 
     def draw(self, screen, offset_y=0):
         def draw_tile(screen, tile, gx, gy, x, y, scaled_tile, offset_x, offset_y_camera, offset_top):
             color = tile.get_color()
-            if tile.highlighted:
-                color = tuple(min(c + 40, 255) for c in color)
 
             px = x * scaled_tile - offset_x
             py = y * scaled_tile - offset_y_camera + offset_top
@@ -42,7 +42,7 @@ class World(BaseGrid):
     def clear_highlight(self):
         for row in self.grid:
             for tile in row:
-                tile.highlighted = False
+                tile.clear_highlight()
 
     def highlight_tile_at(self, pixel_x, pixel_y, offset_y=0):
         grid_x, grid_y = self.screen_to_grid(pixel_x, pixel_y, offset_y)
@@ -53,9 +53,15 @@ class World(BaseGrid):
         gx, gy = self.screen_to_grid(pixel_x, pixel_y, offset_y)
         if 0 <= gx < GRID_WIDTH and 0 <= gy < GRID_HEIGHT and item:
             tile = self.grid[gy][gx]
-            if tile.is_buildable() and tile.building is None:
-                # Create a unique instance
-                tile.building = Building(item.name, item.color)
+
+            # --- NEW: check if item is a Blueprint
+            if hasattr(item, "instantiate"):
+                print(f"[World] Placing blueprint '{item.name}' at ({gx}, {gy})")
+                item.instantiate(self.grid, gx, gy)
+            else:
+                # Fallback to placing a simple building
+                if tile.is_buildable() and tile.building is None:
+                    tile.building = Building(item.name, item.color)
     
     def remove_at(self, pixel_x, pixel_y, offset_y=0):
         gx, gy = self.screen_to_grid(pixel_x, pixel_y, offset_y)
@@ -70,5 +76,8 @@ class World(BaseGrid):
         # Remove all tiles that share this building instance
         for y in range(GRID_HEIGHT):
             for x in range(GRID_WIDTH):
-                if self.grid[y][x].building == building:
-                    self.grid[y][x].building = None
+                tile = self.grid[y][x]
+                if tile.building == building:
+                    tile.building = None
+                    if tile.type == "building":
+                        tile.type = "clear"

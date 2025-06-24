@@ -1,0 +1,9 @@
+{
+  "DrillRig": {
+    "components": [
+      {"type": "DRILL", "pos": [0, 0]},
+      {"type": "POW", "pos": [1, 0]},
+      {"type": "STOR", "pos": [0, 1]}
+    ]
+  }
+}

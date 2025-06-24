@@ -12,8 +12,9 @@ BLUEPRINT_BG = (230, 240, 255)
 BACKGROUND_COLOR = (230, 240, 255)
 
 TILE_TYPES = {
-    "clear": (10, 90, 160),
+    "clear": (130, 200, 250),
     "iron_ore": (130, 130, 130),
     "coal": (30, 30, 30),
     "limestone": (200, 200, 120),
+    "building": (255, 255, 150), 
 }

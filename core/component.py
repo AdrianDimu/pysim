@@ -25,4 +25,7 @@ class Component:
         )
 
         pygame.draw.rect(screen, self.color, rect)
-        pygame.draw.rect(screen, (200, 200, 200), rect, 2)  # Optional border for visibility
+        #pygame.draw.rect(screen, (200, 200, 200), rect, 2)  # Optional border for visibility
+
+    def update(self, dt):
+        pass  # World expects this; do nothing for now

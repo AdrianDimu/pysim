@@ -2,6 +2,8 @@ import pygame, sys, json
 from config import *
 from core.world import World
 from core.buildgrid import BuildGrid
+from core.blueprint import Blueprint
+from core.blueprint_loader import load_blueprints
 from core.building import Building
 from core.component import Component
 from core.gui import GUI
@@ -19,9 +21,7 @@ with open("data/buildings.json") as f:
 with open("data/components.json") as f:
     COMPONENT_DATA = json.load(f)
 
-available_buildings = [
-    Building(name, tuple(data["color"])) for name, data in BUILDING_DATA.items()
-]
+available_buildings = load_blueprints()  # These are blueprints now
 available_components = [
     Component(name, tuple(data["color"]), tuple(data["size"])) for name, data in COMPONENT_DATA.items()
 ]
@@ -97,10 +97,40 @@ while True:
             target.adjust_zoom(delta, mouse_x, mouse_y, offset_top=offset_top, offset_bottom=offset_bottom)
 
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_b:
+            if event.key == pygame.K_ESCAPE:
+                selected_index = None
+                print("Selection cleared")
+
+            elif event.key == pygame.K_b:
                 build_mode = not build_mode
                 print("Build mode ON" if build_mode else "World mode ON")
                 selected_index = None # reset selection when switching mode
+        
+            elif event.key == pygame.K_q and build_mode:
+
+                components = build_grid.extract_blueprint_components()
+                if components:
+                    blueprint = Blueprint("DrillRig", components)
+                    blueprint.save_to_file("data/blueprints/DrillRig.json")
+                    print("Blueprint saved as DrillRig.json")
+
+            elif event.key == pygame.K_r and not build_mode and selected_index is not None:
+                selected_item = available_items[selected_index]
+                if isinstance(selected_item, Blueprint):
+                    selected_item.rotate_90()
+                    print(f"Rotated blueprint '{selected_item.name}' 90°")
+            
+            elif event.key == pygame.K_h and not build_mode and selected_index is not None:
+                selected_item = available_items[selected_index]
+                if isinstance(selected_item, Blueprint):
+                    selected_item.flip_horizontal()
+                    print(f"Flipped blueprint '{selected_item.name}' horizontally")
+
+            elif event.key == pygame.K_v and not build_mode and selected_index is not None:
+                selected_item = available_items[selected_index]
+                if isinstance(selected_item, Blueprint):
+                    selected_item.flip_vertical()
+                    print(f"Flipped blueprint '{selected_item.name}' vertically")
 
     ## --- Smooth camera motion
     keys = pygame.key.get_pressed()
@@ -116,8 +146,35 @@ while True:
     target.clear_highlight()
     target.highlight_tile_at(mouse_x, mouse_y, offset_y=gui_offset)
 
+    # Reset highlights before marking new ones
+    target.clear_highlight()
+
     # --- Draw world/buildgrid
     target.draw(screen, offset_y=gui_offset)
+    if not build_mode and selected_index is not None:
+        selected_item = available_items[selected_index]
+        if isinstance(selected_item, Blueprint):
+            grid_x, grid_y = target.screen_to_grid(mouse_x, mouse_y, offset_y=gui_offset)
+
+            # Mark highlight mode per tile
+            for comp in selected_item.components:
+                cx, cy = comp["pos"]
+                tx, ty = grid_x + cx, grid_y + cy
+                if 0 <= tx < GRID_WIDTH and 0 <= ty < GRID_HEIGHT:
+                    tile = world.grid[ty][tx]
+                    tile.highlight_mode = (
+                    "buildable" if tile.is_buildable() else "invalid"
+                    )
+
+            # Draw preview on top
+            selected_item.draw_preview(
+                screen, grid_x, grid_y,
+                cam_x=target.camera_x,
+                cam_y=target.camera_y,
+                zoom=target.zoom,
+                offset_y=gui_offset,
+                grid=world.grid
+            )
 
     # --- Debug
     grid_x, grid_y = target.screen_to_grid(mouse_x, mouse_y, offset_y=gui_offset)

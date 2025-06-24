@@ -29,11 +29,10 @@ class BuildGrid(BaseGrid):
 
         self.draw_tiles_and_grid(screen, offset_top=offset_y, draw_tile_fn=draw_tile)
 
-
     def clear_highlight(self):
         for row in self.grid:
             for tile in row:
-                tile.highlighted = False
+                tile.clear_highlight()
 
     def highlight_tile_at(self, pixel_x, pixel_y, offset_y=0):
         gx, gy = self.screen_to_grid(pixel_x, pixel_y, offset_y)
@@ -83,3 +82,15 @@ class BuildGrid(BaseGrid):
             for x in range(GRID_WIDTH):
                 if self.grid[y][x].building == component:
                     self.grid[y][x].building = None
+                    self.grid[y][x].type = "clear"
+    
+    def extract_blueprint_components(self):
+        components = []
+        for y, row in enumerate(self.grid):
+            for x, tile in enumerate(row):
+                if tile.building:
+                    components.append({
+                        "type": tile.building.name,
+                        "pos": (x, y)
+                    })
+        return components
